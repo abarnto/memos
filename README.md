@@ -1,111 +1,80 @@
-# Memos
+# Foreword
 
-<img align="right" height="96px" src="https://raw.githubusercontent.com/usememos/.github/refs/heads/main/assets/logo-rounded.png" alt="Memos" />
+Fork of [Memos](https://github.com/usememos/memos) ❤️ which fixes the following stuff:
 
-An open-source, self-hosted note-taking service. Your thoughts, your data, your control — no tracking, no ads, no subscription fees.
+- render of assets on the frontend when S3 storage is setup;
+  > The environment variable `MEMOS_ASSETS_BASE_URL` can be provided to override the frontend base URL of assets (useful in scenarios where frontend links have a different base URL than the upload URL)
+- make the app installable on Desktop too.
 
-[![Home](https://img.shields.io/badge/🏠-usememos.com-blue?style=flat-square)](https://usememos.com)
-[![Live Demo](https://img.shields.io/badge/✨-Try%20Demo-orange?style=flat-square)](https://demo.usememos.com/)
-[![Docs](https://img.shields.io/badge/📚-Documentation-green?style=flat-square)](https://usememos.com/docs)
-[![Discord](https://img.shields.io/badge/💬-Discord-5865f2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/tfPJa4UmAv)
-[![Docker Pulls](https://img.shields.io/docker/pulls/neosmemo/memos?style=flat-square&logo=docker)](https://hub.docker.com/r/neosmemo/memos)
+# How to
 
-<img src="https://raw.githubusercontent.com/usememos/.github/refs/heads/main/assets/demo.png" alt="Memos Demo Screenshot" height="512" />
+> NOTE: all commands below assume you are in the project's root folder!
 
-### 💎 Featured Sponsors
+## Update fork
 
-[**Warp** — The AI-powered terminal built for speed and collaboration](https://go.warp.dev/memos)
+1. Update the `upstream`:
 
-<a href="https://go.warp.dev/memos" target="_blank" rel="noopener">
-  <img src="https://raw.githubusercontent.com/warpdotdev/brand-assets/main/Github/Sponsor/Warp-Github-LG-02.png" alt="Warp - The AI-powered terminal built for speed and collaboration" width="512" />
-</a>
+   ```sh
+   git fetch upstream
+   ```
 
-<p></p>
+2. Update the `main` branch in `upstream`:
 
-[**TestMu AI** - The world’s first full-stack Agentic AI Quality Engineering platform](https://www.testmuai.com/?utm_medium=sponsor&utm_source=memos)
-  
-<a href="https://www.testmuai.com/?utm_medium=sponsor&utm_source=memos" target="_blank" rel="noopener">
-  <img src="https://usememos.com/sponsors/testmu.svg" alt="TestMu AI" height="36" />
-</a>
+   ```sh
+   git checkout main
+   git pull upstream main
+   ```
 
-<p></p>
+3. Rebase the changes:
 
-[**SSD Nodes** - Affordable VPS hosting for self-hosters](https://ssdnodes.com/?utm_source=memos&utm_medium=sponsor)
-  
-<a href="https://ssdnodes.com/?utm_source=memos&utm_medium=sponsor" target="_blank" rel="noopener">
-  <img src="https://usememos.com/sponsors/ssd-nodes.svg" alt="SSD Nodes" height="72" />
-</a>
+   ```sh
+   git checkout <FEATURE_BRANCH>
+   git rebase main
+   ```
 
-## Overview
+## Develop
 
-Memos is a privacy-first, self-hosted knowledge base for personal notes, team wikis, and knowledge management. Built with Go and React, it runs as a single binary with minimal resource usage.
+> Following, `<BE_PORT>` AND `<FE_PORT>` are just placeholders. Use whenever ports you like for each (but obviously different among them).
 
-## Features
+1. (Optional) If you want to change BE (default 8081) and FE (default 3001) ports, change the [vite.config.mts](/web/vite.config.mts) as follows:
 
-- **Privacy-First** — Self-hosted on your infrastructure with zero telemetry, no tracking, and no ads.
-- **Markdown Native** — Full markdown support with plain text storage. Your data is always portable.
-- **Lightweight** — Single Go binary with a React frontend. Low memory footprint, starts in seconds.
-- **Easy to Deploy** — One-line Docker install. Supports SQLite, MySQL, and PostgreSQL.
-- **Developer-Friendly** — Full REST and gRPC APIs for integration with existing workflows.
-- **Clean Interface** — Minimal design with dark mode and mobile-responsive layout.
+- Update the `devProxyServer`'s port with `<BE_PORT>`
+- Update the `config.server.port` to `<FE_PORT>`
 
-## Quick Start
+2. In a shell window, launch the backend:
 
-### Docker (Recommended)
+   ```
+   sh scripts/build.sh && MEMOS_PORT=<BE_PORT> ./build/memos
+   ```
 
-```bash
-docker run -d \
-  --name memos \
-  -p 5230:5230 \
-  -v ~/.memos:/var/opt/memos \
-  neosmemo/memos:stable
-```
+3. In another shell window, launch the frontend:
 
-Open `http://localhost:5230` and start writing!
+   ```
+   cd web && pnpm dev
+   ```
 
-### Try the Live Demo
+## Build
 
-Don't want to install yet? Try our [live demo](https://demo.usememos.com/) first!
+0. Create a `.env` in your production environment with `MEMOS_ASSETS_BASE_URL`; reference the `.env` in a `docker-compose.yml` file.
 
-### Other Installation Methods
+1. Build the frontend first:
 
-- **Docker Compose** - Recommended for production deployments
-- **Pre-built Binaries** - Available for Linux, macOS, and Windows
-- **Kubernetes** - Helm charts and manifests available
-- **Build from Source** - For development and customization
+   ```
+   cd web && pnpm build
+   ```
 
-See our [installation guide](https://usememos.com/docs/deploy) for detailed instructions.
+1. Replace the [backend's frontend dist](/server/router/frontend/dist/) with the [new generated frontend dist folder](/web/dist/)
 
-## Contributing
+1. (Optional) If you're going to build an image with same tag as a previously built one:
 
-Contributions are welcome — bug reports, feature suggestions, pull requests, documentation, and translations.
+   ```
+   docker rmi <your_organization>/memos:<MEMOS_VERSION>
 
-- [Report bugs](https://github.com/usememos/memos/issues/new?template=bug_report.md)
-- [Suggest features](https://github.com/usememos/memos/issues/new?template=feature_request.md)
-- [Submit pull requests](https://github.com/usememos/memos/pulls)
-- [Improve documentation](https://github.com/usememos/memos/tree/main/docs)
-- [Help with translations](https://github.com/usememos/memos/tree/main/web/src/locales)
+   docker system prune # NOTE: Read the prompt before confirmation!
+   ```
 
-## Sponsors
+1. Build the app:
 
-Love Memos? [Sponsor us on GitHub](https://github.com/sponsors/usememos) to help keep the project growing!
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=usememos/memos&type=Date)](https://star-history.com/#usememos/memos&Date)
-
-## License
-
-Memos is open-source software licensed under the [MIT License](LICENSE).
-
-## Privacy Policy
-
-Memos is built with privacy as a core principle. As a self-hosted application, all your data stays on your infrastructure. There is no telemetry, no tracking, and no data collection. See our [Privacy Policy](https://usememos.com/privacy) for details.
-
----
-
-**[Website](https://usememos.com)** • **[Documentation](https://usememos.com/docs)** • **[Demo](https://demo.usememos.com/)** • **[Discord](https://discord.gg/tfPJa4UmAv)** • **[X/Twitter](https://x.com/usememos)**
-
-<a href="https://vercel.com/oss">
-  <img alt="Vercel OSS Program" src="https://vercel.com/oss/program-badge.svg" />
-</a>
+   ```
+   docker build -f scripts/Dockerfile -t <your_organization>/memos:<MEMOS_VERSION> .
+   ```

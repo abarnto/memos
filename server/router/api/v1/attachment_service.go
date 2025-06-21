@@ -166,7 +166,7 @@ func (s *APIV1Service) CreateAttachment(ctx context.Context, request *v1pb.Creat
 		return nil, status.Errorf(codes.Internal, "failed to create attachment: %v", err)
 	}
 
-	return convertAttachmentFromStore(attachment), nil
+	return s.convertAttachmentFromStore(attachment), nil
 }
 
 func (s *APIV1Service) ListAttachments(ctx context.Context, request *v1pb.ListAttachmentsRequest) (*v1pb.ListAttachmentsResponse, error) {
@@ -219,7 +219,7 @@ func (s *APIV1Service) ListAttachments(ctx context.Context, request *v1pb.ListAt
 	response := &v1pb.ListAttachmentsResponse{}
 
 	for _, attachment := range attachments {
-		response.Attachments = append(response.Attachments, convertAttachmentFromStore(attachment))
+		response.Attachments = append(response.Attachments, s.convertAttachmentFromStore(attachment))
 	}
 
 	// For simplicity, set total size to the number of returned attachments.
@@ -246,13 +246,7 @@ func (s *APIV1Service) GetAttachment(ctx context.Context, request *v1pb.GetAttac
 	if attachment == nil {
 		return nil, status.Errorf(codes.NotFound, "attachment not found")
 	}
-
-	// Check access permission based on linked memo visibility.
-	if err := s.checkAttachmentAccess(ctx, attachment); err != nil {
-		return nil, err
-	}
-
-	return convertAttachmentFromStore(attachment), nil
+	return s.convertAttachmentFromStore(attachment), nil
 }
 
 func (s *APIV1Service) UpdateAttachment(ctx context.Context, request *v1pb.UpdateAttachmentRequest) (*v1pb.Attachment, error) {
@@ -335,7 +329,7 @@ func (s *APIV1Service) DeleteAttachment(ctx context.Context, request *v1pb.Delet
 	return &emptypb.Empty{}, nil
 }
 
-func convertAttachmentFromStore(attachment *store.Attachment) *v1pb.Attachment {
+func (s *APIV1Service) convertAttachmentFromStore(attachment *store.Attachment) *v1pb.Attachment {
 	attachmentMessage := &v1pb.Attachment{
 		Name:       fmt.Sprintf("%s%s", AttachmentNamePrefix, attachment.UID),
 		CreateTime: timestamppb.New(time.Unix(attachment.CreatedTs, 0)),
@@ -348,7 +342,20 @@ func convertAttachmentFromStore(attachment *store.Attachment) *v1pb.Attachment {
 		attachmentMessage.Memo = &memoName
 	}
 	if attachment.StorageType == storepb.AttachmentStorageType_EXTERNAL || attachment.StorageType == storepb.AttachmentStorageType_S3 {
-		attachmentMessage.ExternalLink = attachment.Reference
+		custom_assets_base_url := os.Getenv("MEMOS_ASSETS_BASE_URL")
+		if custom_assets_base_url != "" {
+			// Get storage setting from the service
+			workspaceStorageSetting, _ := s.Store.GetInstanceStorageSetting(context.Background())
+			custom_external_link := strings.Replace(
+				attachment.Reference,
+				workspaceStorageSetting.S3Config.Endpoint,
+				custom_assets_base_url,
+				1,
+			)
+			attachmentMessage.ExternalLink = custom_external_link
+		} else {
+			attachmentMessage.ExternalLink = attachment.Reference
+		}
 	}
 
 	return attachmentMessage

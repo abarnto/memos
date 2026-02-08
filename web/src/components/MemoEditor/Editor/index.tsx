@@ -17,6 +17,7 @@ export interface EditorRefActions {
   setContent: (text: string) => void;
   getContent: () => string;
   getSelectedContent: () => string;
+  isTextStyled: (delimiter: string) => boolean;
   getCursorPosition: () => number;
   setCursorPosition: (startPos: number, endPos?: number) => void;
   getCursorLineNumber: () => number;
@@ -133,6 +134,24 @@ const Editor = forwardRef(function Editor(props: EditorProps, ref: React.Forward
         const editor = editorRef.current;
         if (!editor) return "";
         return editor.value.slice(editor.selectionStart, editor.selectionEnd);
+      },
+      isTextStyled: (delimiter: string) => {
+        const editor = editorRef.current;
+        if (!editor) return false;
+
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const content = editor.value;
+        const delimiterLen = delimiter.length;
+
+        // Check if there's enough space for delimiters before and after
+        if (start < delimiterLen || end + delimiterLen > content.length) return false;
+
+        // Check if delimiters exist around the selection
+        const beforeDelimiter = content.slice(start - delimiterLen, start);
+        const afterDelimiter = content.slice(end, end + delimiterLen);
+
+        return beforeDelimiter === delimiter && afterDelimiter === delimiter;
       },
       setCursorPosition: (startPos: number, endPos?: number) => {
         const editor = editorRef.current;

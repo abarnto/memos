@@ -25,6 +25,11 @@ export interface EditorToolbarProps {
   onSave: () => void;
   onCancel?: () => void;
   memoName?: string;
+  editorRef: React.RefObject<EditorRefActions | null>;
+}
+
+export interface TextStyleButtonsProps {
+  editorRef: React.RefObject<EditorRefActions | null>;
 }
 
 export interface EditorMetadataProps {
@@ -36,10 +41,9 @@ export interface FocusModeOverlayProps {
   onToggle: () => void;
 }
 
-export interface FocusModeExitButtonProps {
+export interface FocusModeToggleButtonProps {
   isActive: boolean;
   onToggle: () => void;
-  title: string;
 }
 
 export interface LinkMemoDialogProps {

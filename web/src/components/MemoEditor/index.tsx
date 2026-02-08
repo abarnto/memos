@@ -9,7 +9,7 @@ import { handleError } from "@/lib/error";
 import { cn } from "@/lib/utils";
 import { useTranslate } from "@/utils/i18n";
 import { convertVisibilityFromString } from "@/utils/memo";
-import { EditorContent, EditorMetadata, EditorToolbar, FocusModeExitButton, FocusModeOverlay, TimestampPopover } from "./components";
+import { EditorContent, EditorMetadata, EditorToolbar, FocusModeOverlay, TimestampPopover } from "./components";
 import { FOCUS_MODE_STYLES } from "./constants";
 import type { EditorRefActions } from "./Editor";
 import { useAutoSave, useFocusMode, useKeyboard, useMemoInit } from "./hooks";
@@ -130,9 +130,6 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
           className,
         )}
       >
-        {/* Exit button is absolutely positioned in top-right corner when active */}
-        <FocusModeExitButton isActive={state.ui.isFocusMode} onToggle={handleToggleFocusMode} title={t("editor.exit-focus-mode")} />
-
         {memoName && <TimestampPopover />}
 
         {/* Editor content grows to fill available space in focus mode */}
@@ -141,7 +138,7 @@ const MemoEditorImpl: React.FC<MemoEditorProps> = ({
         {/* Metadata and toolbar grouped together at bottom */}
         <div className="w-full flex flex-col gap-2">
           <EditorMetadata memoName={memoName} />
-          <EditorToolbar onSave={handleSave} onCancel={onCancel} memoName={memoName} />
+          <EditorToolbar onSave={handleSave} onCancel={onCancel} memoName={memoName} editorRef={editorRef} />
         </div>
       </div>
     </>
